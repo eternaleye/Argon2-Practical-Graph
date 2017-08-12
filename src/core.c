@@ -189,10 +189,12 @@ uint32_t index_alpha(const argon2_instance_t *instance,
      * blocks in this segment
      *      Other lanes : (SYNC_POINTS - 1) last segments
      */
-    uint32_t reference_area_size;
+    /* uint32_t reference_area_size; */
     uint64_t relative_position;
     uint32_t start_position, absolute_position;
 
+/* CHANGING TO BLOCKI-ALWEN DISTRIBUTION. COMPUTED IN REF.C */
+#if 0 /* Blocki-Alwen */
     if (0 == position->pass) {
         /* First pass */
         if (0 == position->slice) {
@@ -230,6 +232,9 @@ uint32_t index_alpha(const argon2_instance_t *instance,
     relative_position = relative_position * relative_position >> 32;
     relative_position = reference_area_size - 1 -
                         (reference_area_size * relative_position >> 32);
+#endif /* Blocki-Alwen */
+
+    relative_position = pseudo_rand;
 
     /* 1.2.5 Computing starting position */
     start_position = 0;
@@ -496,6 +501,10 @@ int validate_inputs(const argon2_context *context) {
         return ARGON2_ALLOCATE_MEMORY_CBK_NULL;
     }
 
+    if (RAND_MAX != 2147483647) {
+        return ARGON2_RAND_RANGE_ERR;
+    }
+
     return ARGON2_OK;
 }
 
@@ -599,6 +608,8 @@ void initial_hash(uint8_t *blockhash, argon2_context *context,
 int initialize(argon2_instance_t *instance, argon2_context *context) {
     uint8_t blockhash[ARGON2_PREHASH_SEED_LENGTH];
     int result = ARGON2_OK;
+    uint32_t data_independent_addressing;
+    uint32_t rand_seed;
 
     if (instance == NULL || context == NULL)
         return ARGON2_INCORRECT_PARAMETER;
@@ -628,6 +639,22 @@ int initialize(argon2_instance_t *instance, argon2_context *context) {
     /* 3. Creating first blocks, we always have at least two blocks in a slice
      */
     fill_first_blocks(blockhash, instance);
+
+    /* Initialize random function for edge selection
+        PRNG initialization similar to previous, but done earlier in this case
+     */
+
+    data_independent_addressing =
+        (instance->type == Argon2_i) ||
+        (instance->type == Argon2_id);
+
+    if (data_independent_addressing) {
+        rand_seed  = instance->memory_blocks;
+        rand_seed ^= instance->passes;
+        rand_seed ^= instance->type;
+        srand(rand_seed);
+    }
+
     /* Clearing the hash */
     clear_internal_memory(blockhash, ARGON2_PREHASH_SEED_LENGTH);
 

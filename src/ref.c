@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits>
 
 #include "argon2.h"
 #include "core.h"
@@ -94,7 +95,7 @@ void fill_segment(const argon2_instance_t *instance,
     uint64_t pseudo_rand, ref_index, ref_lane;
     uint32_t prev_offset, curr_offset;
     uint32_t starting_index;
-    uint32_t i;
+    uint32_t i,j,k,l;
     int data_independent_addressing;
 
     if (instance == NULL) {
@@ -151,10 +152,25 @@ void fill_segment(const argon2_instance_t *instance,
         /* 1.2 Computing the index of the reference block */
         /* 1.2.1 Taking pseudo-random value from the previous block */
         if (data_independent_addressing) {
+
+            /* OLD VERSION
             if (i % ARGON2_ADDRESSES_IN_BLOCK == 0) {
                 next_addresses(&address_block, &input_block, &zero_block);
             }
             pseudo_rand = address_block.v[i % ARGON2_ADDRESSES_IN_BLOCK];
+            */
+            // NEW VERSION
+            // Select j in [1, floor(log2(i))]
+
+            j = numeric_limits<unsigned>::digits - __builtin_clz(curr_offset) - 1; // Fast log
+            j = rand() % j + 1;
+            // Select k in [2^j, max{2^j+1, i-1}]
+            l = MAX(0x00000001 << j+1,curr_offset-1) - 0x00000001 << j;
+            k = rand() % l + (0x00000001 << j);
+
+            pseudo_rand = curr_block - j;
+
+
         } else {
             pseudo_rand = instance->memory[prev_offset].v[0];
         }

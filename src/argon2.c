@@ -439,6 +439,8 @@ const char *argon2_error_message(int error_code) {
         return "Some of encoded parameters are too long or too short";
     case ARGON2_VERIFY_MISMATCH:
         return "The password does not match the supplied hash";
+    case ARGON2_RAND_RANGE_ERR:
+        return "Proof-of-concept requires RAND_MAX = " + RAND_MAX;
     default:
         return "Unknown error code";
     }
