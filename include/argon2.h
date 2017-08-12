@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+
 /* Symbols visibility control */
 #ifdef A2_VISCTL
 #define ARGON2_PUBLIC __attribute__((visibility("default")))
@@ -151,7 +153,10 @@ typedef enum Argon2_ErrorCodes {
 
     ARGON2_DECODING_LENGTH_FAIL = -34,
 
-    ARGON2_VERIFY_MISMATCH = -35
+    ARGON2_VERIFY_MISMATCH = -35,
+
+    ARGON2_RAND_RANGE_ERR = -36
+
 } argon2_error_codes;
 
 /* Memory allocator types --- for external allocation */
